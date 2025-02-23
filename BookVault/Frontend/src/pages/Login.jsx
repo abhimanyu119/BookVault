@@ -5,15 +5,32 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (email === "admin@bookvault.com") {
-      localStorage.setItem("token", "admin");
-      navigate("/admin");
-    } else {
-      localStorage.setItem("token", "user");
-      navigate("/dashboard");
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Login failed");
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      if (data.user.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      setError(error.message);
     }
   };
 
@@ -25,6 +42,7 @@ const Login = () => {
         className="mt-6 w-full max-w-md bg-white p-6 rounded-lg shadow-lg"
         onSubmit={handleLogin}
       >
+        {error && <p className="text-red-500 mb-4">{error}</p>}
         <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="email">
             Email
@@ -37,6 +55,7 @@ const Login = () => {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
         </div>
         <div className="mb-4">
@@ -51,6 +70,7 @@ const Login = () => {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
         </div>
         <button className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700">

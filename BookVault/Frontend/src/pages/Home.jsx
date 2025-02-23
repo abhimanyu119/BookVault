@@ -7,21 +7,22 @@ const Home = () => (
       <div className="text-2xl w-5xl font-bold text-white">
         <img src={logo} className="h-16 w-auto"></img>
       </div>
-      <nav className="space-x-6">
-        <Link to="/products" className="text-gray-300 hover:text-white">
+      <nav className="space-x-6 flex items-center">
+        <Link to="/browse" className="text-gray-300 hover:text-white">
           Products
-        </Link>
-        <Link to="/pricing" className="text-gray-300 hover:text-white">
-          Pricing
         </Link>
         <Link to="/about" className="text-gray-300 hover:text-white">
           About
         </Link>
+        <span className="text-gray-300">|</span>
+        <Link to="/login" className="text-gray-300 hover:text-white">
+          Login
+        </Link>
         <Link
-          to="/login"
+          to="/signup"
           className="px-4 py-2 bg-blue-100 text-white rounded-lg hover:bg-blue-300"
         >
-          Log In
+          Signup
         </Link>
       </nav>
     </header>
