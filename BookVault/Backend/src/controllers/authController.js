@@ -32,15 +32,19 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
+    const isAdmin = email === process.env.ADMIN_EMAIL;
+    const userRole = isAdmin ? "admin" : user.role;
+
+
     const token = jwt.sign(
-      { id: email, role: user.role },
+      { id: email, role: userRole },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
     res.json({
       message: "Login successful",
       token,
-      user: { name: user.name, email: user.email, role: user.role },
+      user: { name: user.name, email: user.email, role: userRole },
     });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
