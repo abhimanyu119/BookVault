@@ -10,7 +10,7 @@ const botProtection = require("./middlewares/botProtection");
 const app = express();
 const PORT = process.env.PORT;
 
-const allowedOrigins = [process.env.FRONTEND_URL, "http://localhost:5173"];
+const allowedOrigins = [process.env.FRONTEND_URL];
 
 app.use(
   cors({
