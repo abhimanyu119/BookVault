@@ -10,12 +10,13 @@ exports.getUserProfile = async (req, res) => {
       return res.json(cachedData);
     }
 
-    const user = await User.findByEmail(req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
     cache.set(cacheKey, user, 60);
     res.json(user);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

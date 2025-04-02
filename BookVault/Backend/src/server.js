@@ -6,13 +6,15 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const rateLimit = require("./middlewares/rateLimit");
 const botProtection = require("./middlewares/botProtection");
-
+const connectDB = require("./config/db");
 const app = express();
 const PORT = process.env.PORT;
 
 const allowedOrigins = [
   process.env.FRONTEND_URL.trim(),
 ];
+
+connectDB();
 
 app.use(
   cors({

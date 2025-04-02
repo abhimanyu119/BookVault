@@ -1,17 +1,10 @@
-const dynamoDB = require("../config/db");
-const USERS_TABLE = process.env.USERS_TABLE;
+const mongoose = require("mongoose");
 
-const User = {
-  async findByEmail(email) {
-    const result = await dynamoDB
-      .get({ TableName: USERS_TABLE, Key: { email } })
-      .promise();
-    return result.Item;
-  },
+const UserSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true, required: true },
+  password: { type: String, required: true },
+  role: { type: String, default: "user" },
+});
 
-  async create(user) {
-    await dynamoDB.put({ TableName: USERS_TABLE, Item: user }).promise();
-  },
-};
-
-module.exports = User;
+module.exports = mongoose.model("User", UserSchema);

@@ -1,14 +1,20 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+const path = require("path");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
 
-const AWS = require("aws-sdk");
-const AmazonDaxClient = require("amazon-dax-client");
-
-const dax = new AmazonDaxClient({
-  endpoints: [process.env.DAX_ENDPOINT],
-  region: process.env.AWS_REGION,
-});
-
-const dynamoDB = new AWS.DynamoDB.DocumentClient({ service: dax });
-
-module.exports = dynamoDB;
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+console.log(process.env.MONGODB_URI);
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+    console.log("MongoDB Connected...");
+  } catch (error) {
+    console.error("MongoDB Connection Failed:", error);
+    process.exit(1);
+  }
+};
+connectDB();
+module.exports = connectDB;

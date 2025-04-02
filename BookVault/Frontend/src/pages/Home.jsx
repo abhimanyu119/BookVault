@@ -1,58 +1,86 @@
-import logo from "../assets/logo-copy.svg";
-import { Link } from "react-router-dom";
+// import React from "react";
 
-const Home = () => (
-  <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center bg-cover bg-no-repeat bg-center w-screen overflow-x-hidden">
-    <header className="flex items-center whitespace-nowrap max-w-screen justify-between px-6 py-4">
-      <div className="text-2xl w-5xl font-bold text-white">
-        <img src={logo} className="h-16 w-auto"></img>
-      </div>
-      <nav className="space-x-6 flex items-center">
-        <Link to="/browse" className="text-gray-300 hover:text-white">
-          Products
-        </Link>
-        <Link to="/about" className="text-gray-300 hover:text-white">
-          About
-        </Link>
-        <span className="text-gray-300">|</span>
-        <Link to="/login" className="text-gray-300 hover:text-white">
-          Login
-        </Link>
-        <Link
-          to="/signup"
-          className="px-4 py-2 bg-blue-100 text-white rounded-lg hover:bg-blue-300"
-        >
-          Signup
-        </Link>
-      </nav>
-    </header>
+const Home = () => {
+  return (
+    <div className="relative min-h-screen flex flex-col items-center justify-center px-4 py-20">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 -z-10"></div>
 
-    <main className="flex-grow w-full bg-no-repeat bg-cover flex bg-[url(./assets/hero-bg.png)] items-center justify-between px-12">
-      <div className="w-5xl mx-auto">
-        <h1 className="text-gray-800 text-5xl font-bold leading-tight">
-          Manage Your Library Like Never Before
+      {/* Decorative circles */}
+      <div className="absolute top-1/4 -left-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+      {/* <div className="absolute bottom-1/4 -right-16 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div> */}
+
+      {/* Main content */}
+      <div className="max-w-4xl w-full text-center space-y-12">
+        {/* Small badge */}
+        <div className="inline-block mb-4 px-4 py-2 bg-gray-800/80 rounded-full backdrop-blur-sm border border-gray-700 text-sm text-gray-300">
+          <span className="inline-block w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+          Now available for everyone
+        </div>
+
+        {/* Heading */}
+        <h1 className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+          Make Every <span className="text-blue-400">Moment</span> Count
         </h1>
-        <p className="mt-4 text-lg text-gray-800">
-          Streamline your library&#39;s operations with secure, user-friendly
-          tools designed for both admins and readers.
+
+        {/* Subheading */}
+        <p className="text-xl md:text-2xl text-gray-300 max-w-2xl mx-auto">
+          Simplify your workflow, maximize your productivity, and achieve more
+          with less effort.
         </p>
-        <div className="mt-6 flex space-x-4">
-          <Link
-            to="/signup"
-            className="px-6 py-3 bg-blue-100 text-black font-semibold rounded-lg hover:bg-blue-300"
-          >
+
+        {/* Action buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+          <button className="w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-600/20 transition-all duration-200 transform hover:scale-105">
             Get Started
-          </Link>
-          <Link
-            to="/browse"
-            className="px-6 py-3 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-600"
-          >
-            Explore Books
-          </Link>
+          </button>
+          <button className="w-full sm:w-auto px-8 py-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg border border-gray-700 shadow-lg transition-all duration-200 transform hover:scale-105">
+            Browse
+          </button>
+        </div>
+
+        {/* Social proof */}
+        <div className="pt-16">
+          <p className="text-gray-400 mb-4">
+            Trusted by leading companies worldwide
+          </p>
+          <div className="flex flex-wrap justify-center gap-8">
+            {["Company 1", "Company 2", "Company 3", "Company 4"].map(
+              (company, index) => (
+                <div key={index} className="h-8 text-gray-500 font-bold">
+                  {company}
+                </div>
+              )
+            )}
+          </div>
         </div>
       </div>
-    </main>
-  </div>
-);
+
+      {/* Wave decoration */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gray-900 -z-10">
+        <svg
+          className="absolute bottom-0 w-full h-24"
+          viewBox="0 0 1440 240"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M0 144L60 132C120 120 240 96 360 84C480 72 600 72 720 96C840 120 960 168 1080 174C1200 180 1320 144 1380 126L1440 108V240H1380C1320 240 1200 240 1080 240C960 240 840 240 720 240C600 240 480 240 360 240C240 240 120 240 60 240H0V144Z"
+            fill="#111827"
+            fillOpacity="0.4"
+          />
+          <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M0 192L60 180C120 168 240 144 360 138C480 132 600 144 720 156C840 168 960 180 1080 174C1200 168 1320 144 1380 132L1440 120V240H1380C1320 240 1200 240 1080 240C960 240 840 240 720 240C600 240 480 240 360 240C240 240 120 240 60 240H0V192Z"
+            fill="#111827"
+          />
+        </svg>
+      </div>
+    </div>
+  );
+};
 
 export default Home;
