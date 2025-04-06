@@ -6,6 +6,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const debounceRef = useRef({});
 
@@ -133,22 +134,18 @@ const Login = () => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
-                d="M17 7.82959L18.6965 9.35641C20.239 10.7447 21.0103 11.4389 21.0103 12.3296C21.0103 13.2203 20.239 13.9145 18.6965 15.3028L17 16.8296"
+                d="M12 12C14.7614 12 17 9.76142 17 7C17 4.23858 14.7614 2 12 2C9.23858 2 7 4.23858 7 7C7 9.76142 9.23858 12 12 12Z"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
+                strokeLinejoin="round"
               />
               <path
-                d="M13.9868 5L10.0132 19.8297"
+                d="M4 22C4 17.5817 7.58172 14 12 14C16.4183 14 20 17.5817 20 22"
                 stroke="currentColor"
                 strokeWidth="1.5"
                 strokeLinecap="round"
-              />
-              <path
-                d="M7.00005 7.82959L5.30358 9.35641C3.76102 10.7447 2.98975 11.4389 2.98975 12.3296C2.98975 13.2203 3.76102 13.9145 5.30358 15.3028L7.00005 16.8296"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
+                strokeLinejoin="round"
               />
             </svg>
           </div>
@@ -179,6 +176,7 @@ const Login = () => {
                   setEmail(e.target.value);
                   debounceValidate("email", e.target.value);
                 }}
+                autoComplete="email"
                 required
               />
               {validationErrors.email && (
@@ -200,18 +198,51 @@ const Login = () => {
                   Forgot password?
                 </a>
               </div>
-              <input
-                type="password"
-                id="password"
-                placeholder="••••••••"
-                className="w-full p-3 bg-gray-800/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  debounceValidate("password", e.target.value);
-                }}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  placeholder="••••••••"
+                  className="w-full p-3 pr-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    debounceValidate("password", e.target.value);
+                  }}
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-indigo-400 focus:outline-none"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M10 3C5 3 1.73 7.11 1 10c.73 2.89 4 7 9 7s8.27-4.11 9-7c-.73-2.89-4-7-9-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
               {validationErrors.password && (
                 <p className="mt-1 text-sm text-red-400">
                   {validationErrors.password}

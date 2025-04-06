@@ -11,6 +11,7 @@ const Signup = () => {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
   const debounceTimer = useRef(null);
@@ -94,14 +95,15 @@ const Signup = () => {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-x-hidden flex items-center justify-center px-4 py-24"
+      className="relative min-h-screen w-full overflow-x-hidden flex items-center justify-center px-4 pt-24"
       style={{
         backgroundImage: `url(${illustration})`,
         backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundPosition: "center calc(50% + 2rem)",
+        backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-gray-900 to-blue-950 -z-10"></div>
+      <div className="absolute inset-0 bg-gradient-to-br bg-[#0B0C2A] -z-10"></div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8 w-full max-w-5xl items-center">
         {/* Left Side */}
         <div className="text-center self-start mx-auto mt-[-1rem] md:text-left">
@@ -135,6 +137,8 @@ const Signup = () => {
                 className="w-full p-3 bg-gray-800/50 border border-gray-700 text-white rounded-lg"
                 value={formData.name}
                 onChange={handleChange}
+                placeholder="John Doe"
+                autoComplete="name"
                 required
               />
               {validationErrors.name && (
@@ -154,6 +158,8 @@ const Signup = () => {
                 className="w-full p-3 bg-gray-800/50 border border-gray-700 text-white rounded-lg"
                 value={formData.email}
                 onChange={handleChange}
+                placeholder="you@example.com"
+                autoComplete="email"
                 required
               />
               {validationErrors.email && (
@@ -166,21 +172,58 @@ const Signup = () => {
               <label className="block text-indigo-200 mb-2" htmlFor="password">
                 Password
               </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                className="w-full p-3 bg-gray-800/50 border border-gray-700 text-white rounded-lg"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  className="w-full p-3 pr-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-indigo-400 focus:outline-none"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M10 3C5 3 1.73 7.11 1 10c.73 2.89 4 7 9 7s8.27-4.11 9-7c-.73-2.89-4-7-9-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-indigo-300">
+                Must be at least 8 characters with letters and numbers
+              </p>
               {validationErrors.password && (
                 <p className="mt-1 text-sm text-red-400">
                   {validationErrors.password}
                 </p>
               )}
             </div>
+
             <div>
               <label
                 className="block text-indigo-200 mb-2"
@@ -188,21 +231,55 @@ const Signup = () => {
               >
                 Confirm Password
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                className="w-full p-3 bg-gray-800/50 border border-gray-700 text-white rounded-lg"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  className="w-full p-3 pr-10 bg-gray-800/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-400 hover:text-indigo-400 focus:outline-none"
+                  aria-label="Toggle confirm password visibility"
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M10 3C5 3 1.73 7.11 1 10c.73 2.89 4 7 9 7s8.27-4.11 9-7c-.73-2.89-4-7-9-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
               {validationErrors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-400">
                   {validationErrors.confirmPassword}
                 </p>
               )}
             </div>
+
             <button
               type="submit"
               className="w-full py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg"
@@ -210,6 +287,17 @@ const Signup = () => {
               Create Account
             </button>
           </form>
+          <div className="mt-6 text-center">
+            <p className="text-indigo-300">
+              Already have an account?{" "}
+              <a
+                href="/login"
+                className="text-indigo-400 hover:text-indigo-300 font-medium"
+              >
+                Log In
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>

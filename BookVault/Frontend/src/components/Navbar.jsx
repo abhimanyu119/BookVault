@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../assets/logo-copy.svg";
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
   const hideAuthButtons =
-    location.pathname === "/login" || location.pathname === "/signup";
+    location.pathname === "/login" ||
+    location.pathname === "/signup";
+
+  const isLoggedIn = Boolean(localStorage.getItem("token"));
+  const showLogoutButton = !hideAuthButtons && isLoggedIn;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +26,11 @@ const Navbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
 
   return (
     <div className="w-full z-50 fixed top-2 flex justify-center items-center">
@@ -142,25 +153,36 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Auth Buttons */}
+        {/* Auth / Logout Buttons */}
         {!hideAuthButtons && (
           <div className="hidden md:flex items-center space-x-3">
-            <Link
-              to="/login"
-              className="text-gray-200 hover:text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
-            >
-              Log in
-            </Link>
-            <Link
-              to="/signup"
-              className={`rounded-lg px-4 py-2 font-medium transition-all duration-300 ${
-                scrolled
-                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20"
-                  : "bg-gray-800 hover:bg-gray-700 text-white"
-              }`}
-            >
-              Get started
-            </Link>
+            {showLogoutButton ? (
+              <button
+                onClick={handleLogout}
+                className="text-gray-200 hover:text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors duration-200"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-gray-200 hover:text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className={`rounded-lg px-4 py-2 font-medium transition-all duration-300 ${
+                    scrolled
+                      ? "bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/20"
+                      : "bg-gray-800 hover:bg-gray-700 text-white"
+                  }`}
+                >
+                  Get started
+                </Link>
+              </>
+            )}
           </div>
         )}
 
@@ -245,26 +267,34 @@ const Navbar = () => {
                 For Librarians
               </Link>
 
-              {!hideAuthButtons && (
-                <>
-                  <Link
-                    to="/login"
-                    className="text-gray-200 hover:text-white py-2"
+              {!hideAuthButtons &&
+                (showLogoutButton ? (
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-200 hover:text-white py-2 text-left"
                   >
-                    Log in
-                  </Link>
-                  <Link
-                    to="/signup"
-                    className={`rounded-lg px-4 py-2 font-medium text-center ${
-                      scrolled
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "bg-gray-800 hover:bg-gray-700"
-                    }`}
-                  >
-                    Get started
-                  </Link>
-                </>
-              )}
+                    Logout
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="text-gray-200 hover:text-white py-2"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className={`rounded-lg px-4 py-2 font-medium text-center ${
+                        scrolled
+                          ? "bg-blue-600 hover:bg-blue-700"
+                          : "bg-gray-800 hover:bg-gray-700"
+                      }`}
+                    >
+                      Get started
+                    </Link>
+                  </>
+                ))}
             </div>
           </div>
         )}
