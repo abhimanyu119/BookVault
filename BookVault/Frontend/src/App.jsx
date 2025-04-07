@@ -72,9 +72,16 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated() ? children : <Navigate to="/login" />;
 };
 
-ProtectedRoute.propTypes = {
+const PublicRoute = ({ children }) => {
+  return isAuthenticated() ? <Navigate to="/dashboard" /> : children;
+};
+
+//Route Prop Validation
+const RoutePropTypes = {
   children: PropTypes.node.isRequired,
 };
+ProtectedRoute.propTypes = RoutePropTypes;
+PublicRoute.propTypes = RoutePropTypes;
 
 function App() {
   // Add global styles when the component mounts
@@ -94,8 +101,22 @@ function App() {
       <Routes>
         <Route element={<Layout />}>
           {/* All these routes will have the navbar from Layout */}
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/login" element={<Login />} />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <Signup />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
           <Route path="/" element={<Home />} />
           <Route path="/browse" element={<Browse />} />
           <Route

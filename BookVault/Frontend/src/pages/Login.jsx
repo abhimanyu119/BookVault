@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
   const debounceRef = useRef({});
@@ -59,32 +61,30 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
 
     if (!validateForm()) {
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await axios.post("/auth/login", { email, password });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Login failed");
+      const { token, user } = response.data;
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
 
-      if (data.user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/dashboard");
+      if (response.status === 200) {
+        setSuccess("Login successful! Redirecting...");
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
       }
     } catch (error) {
-      setError(error.message);
+      const errorMsg =
+        error.response?.data?.error || error.message || "Login failed";
+      setError(errorMsg);
     }
   };
 
@@ -158,6 +158,11 @@ const Login = () => {
           {error && (
             <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
               {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-6 p-4 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400">
+              {success}
             </div>
           )}
 
@@ -259,7 +264,6 @@ const Login = () => {
               </button>
             </div>
           </form>
-
           <div className="mt-6 text-center">
             <p className="text-indigo-300">
               Don&#39;t have an account?{" "}

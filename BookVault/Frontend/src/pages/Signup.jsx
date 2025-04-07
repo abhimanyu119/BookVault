@@ -1,6 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 import illustration from "../assets/signup-illustration.png";
+
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -73,23 +75,24 @@ const Signup = () => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
     try {
       const signupData = {
         name: formData.name,
         email: formData.email,
         password: formData.password,
       };
-      const response = await fetch("http://localhost:5000/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupData),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Signup failed");
-      setSuccess("Account created successfully! Redirecting to login...");
+
+      const response = await axios.post("/auth/signup", signupData);
+      if (response.status === 201) {
+        setSuccess("Account created successfully! Redirecting to login...");
+      }
+
       setTimeout(() => navigate("/login"), 2000);
     } catch (error) {
-      setError(error.message);
+      const errorMsg =
+        error.response?.data?.error || error.message || "Signup failed";
+      setError(errorMsg);
     }
   };
 
