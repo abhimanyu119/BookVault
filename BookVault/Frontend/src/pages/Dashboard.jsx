@@ -5,7 +5,7 @@ import axios from "../api/axios";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  // const [error, setError] = useState("");
   const [userData, setUserData] = useState(null);
   const [bookStats, setBookStats] = useState({
     borrowed: 0,
@@ -61,10 +61,10 @@ const Dashboard = () => {
         setNotifications(notificationsResponse.data || []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        setError(
-          error.response?.data?.message ||
-          "Failed to load dashboard data. Please try again."
-        );
+        // setError(
+        //   error.response?.data?.message ||
+        //   "Failed to load dashboard data. Please try again."
+        // );
         
         // If unauthorized, redirect to login
         if (error.response?.status === 401) {
@@ -123,16 +123,16 @@ const Dashboard = () => {
       <div className="fixed bottom-1/4 -right-16 w-72 h-96 bg-indigo-500/5 rounded-md blur-2xl -rotate-12 -z-10"></div>
 
       {/* Main content wrapper */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl min-h-full mx-auto">
         {/* Error message if any */}
-        {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
+        {/* {error && (
+          <div className="mt-16 mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
             {error}
           </div>
-        )}
+        )} */}
 
         {/* Dashboard header */}
-        <div className="mb-8">
+        <div className="mt-20 mb-8">
           <h1 className="text-3xl font-bold text-white">
             Welcome back, {userData?.name || "Reader"}
           </h1>
