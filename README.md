@@ -35,8 +35,7 @@ Fill in the appropriate values for each variable based on your local or producti
 
 BookVault/
 ├── frontend/
-│   ├── src/
-│   │   └── .env        ← Add your environment variables here
+│   ├── .env        ← Add your environment variables here
 │   └── ...
 ├── backend/
 └── ...
