@@ -15,11 +15,15 @@ git clone https://github.com/abhimanyu119/BookVault.git
 ```bash
 cd BookVault
 ```
-### 3. Start the Development Server
+### 3. Install the Required Dependencies
+```bash
+npm install
+```
+### 4. Start the Development Server
 ```bash
 npm run dev
 ```
-4. Setup Environment Variables
+### 5. Setup Environment Variables
 Create a .env file inside the frontend/src directory with the following entries:
 ```bash
 PORT=
