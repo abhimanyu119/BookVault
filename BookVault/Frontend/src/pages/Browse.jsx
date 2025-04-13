@@ -1,32 +1,36 @@
 import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate} from "react-router-dom";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
+import BookCard from "../components/BookCard";
+
+// API endpoints
+const GOOGLE_BOOKS_API_BASE = "https://www.googleapis.com/books/v1/volumes";
 
 const Browse = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
-  // State for books and UI
-  const [books, setBooks] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  // State for search parameters - we're using two state variables for the search
+  // searchTerm is the one used for querying and URL updates
   const [searchTerm, setSearchTerm] = useState(searchParams.get("q") || "");
+  // localSearchTerm is what the input field displays - this prevents the input from getting locked
+  const [localSearchTerm, setLocalSearchTerm] = useState(
+    searchParams.get("q") || ""
+  );
   const [category, setCategory] = useState(
     searchParams.get("category") || "all"
   );
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-
-  // State for advanced options
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [sortBy, setSortBy] = useState("relevance");
   const [filterBy, setFilterBy] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-
-  // Refs for infinite scrolling
-  const observer = useRef();
+  const didRunOnce = useRef(false);
+  // Ref for infinite scrolling
   const lastBookElementRef = useRef();
+  // Ref for search input to maintain focus
+  // const searchInputRef = useRef(null);
 
   // Categories for filter dropdown
   const categories = [
@@ -45,119 +49,148 @@ const Browse = () => {
     { value: "health", label: "Health & Fitness" },
   ];
 
-  // Listen for URL changes and update state accordingly
+  // Keep localSearchTerm in sync with searchTerm from URL
+useEffect(() => {
+  if (didRunOnce.current) return;
+  didRunOnce.current = true;
+
+  const queryParam = searchParams.get("q");
+  if (queryParam !== null && searchTerm === "") {
+    setSearchTerm(queryParam);
+    setLocalSearchTerm(queryParam);
+  }
+
+  const categoryParam = searchParams.get("category");
+  if (categoryParam !== null) {
+    setCategory(categoryParam);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
+  // Debounce searchTerm update
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const queryParam = searchParams.get("q");
-    const categoryParam = searchParams.get("category");
+    const handler = setTimeout(
+      () => {
+        if (searchTerm !== localSearchTerm) {
+          setSearchTerm(localSearchTerm);
+          updateURL();
+          refetch();
+        }
+      },
+      localSearchTerm.trim() === "" ? 0 : 400
+    ); // 0ms for full clear, 400ms otherwise
 
-    if (queryParam) setSearchTerm(queryParam);
-    if (categoryParam) setCategory(categoryParam);
+    return () => clearTimeout(handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localSearchTerm]);
 
-    // Reset page when search params change
-    if (queryParam !== searchTerm || categoryParam !== category) {
-      setPage(0);
-      setBooks([]);
-    }
-  }, [location.search]);
-
-  // Fetch books from Google Books API
-  const fetchBooks = async (reset = false) => {
-    try {
-      setIsLoading(true);
-      setError("");
-
-      // Use reset to determine whether to append or replace results
-      const currentPage = reset ? 0 : page;
-      const startIndex = currentPage * 10; // Google Books API uses multiples of 10
-
-      // Construct the query
-      let query = searchTerm;
-
+  // React Query for fetching books
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: [
+      "books",
+      { q: searchTerm, category, sort: sortBy, filter: filterBy },
+    ],
+    queryFn: async ({ pageParam = 0 }) => {
+      // Construct query
+      let query = searchTerm || "subject:all";
       if (category && category !== "all") {
         query += `+subject:${category}`;
       }
 
-      // Filter options
+      // Add filter if needed
       let filterQuery = "";
       if (filterBy !== "all") {
         filterQuery = `&filter=${filterBy}`;
       }
 
-      // Call Google Books API
-      const response = await axios.get(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-          query
-        )}&startIndex=${startIndex}&maxResults=10&orderBy=${sortBy}${filterQuery}&key=${
-          process.env.REACT_APP_GOOGLE_BOOKS_API_KEY || "YOUR_API_KEY"
-        }`
+      const startIndex = pageParam * 10; // Google Books API uses multiples of 10
+      const url = `${GOOGLE_BOOKS_API_BASE}?q=${encodeURIComponent(
+        query
+      )}&startIndex=${startIndex}&maxResults=10&orderBy=${sortBy}${filterQuery}`;
+
+      const response = await axios.get(url);
+      return response.data;
+    },
+    getNextPageParam: (lastPage, allPages) => {
+      // Check if there are more results to load
+      const currentResultCount = allPages.reduce(
+        (total, page) => total + (page.items?.length || 0),
+        0
       );
 
-      const { items, totalItems } = response.data;
+      return lastPage.items && currentResultCount < lastPage.totalItems
+        ? allPages.length
+        : undefined;
+    },
+    enabled: !!(
+      searchTerm ||
+      category !== "all" ||
+      searchParams.get("recommendations") === "true"
+    ),
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    cacheTime: 30 * 60 * 1000, // Keep data in cache for 30 minutes
+  });
 
-      // Check if we have results and if there are more to load
-      if (!items || items.length === 0) {
-        setHasMore(false);
-        if (currentPage === 0) {
-          setBooks([]);
-          if (searchTerm) {
-            setError("No books found for your search. Try different keywords.");
-          }
-        }
-        return;
-      }
-
-      // Process and set books
-      const newBooks = items.map((book) => ({
+  // Process the books from React Query result
+  const books =
+    data?.pages
+      .flatMap((page) => page.items || [])
+      .map((book) => ({
         id: book.id,
-        title: book.volumeInfo.title || "Unknown Title",
-        subtitle: book.volumeInfo.subtitle || "",
-        authors: book.volumeInfo.authors || ["Unknown Author"],
-        publisher: book.volumeInfo.publisher || "Unknown Publisher",
-        publishedDate: book.volumeInfo.publishedDate || "Unknown Date",
-        description: book.volumeInfo.description || "No description available",
-        pageCount: book.volumeInfo.pageCount || 0,
-        categories: book.volumeInfo.categories || [],
-        averageRating: book.volumeInfo.averageRating || 0,
-        ratingsCount: book.volumeInfo.ratingsCount || 0,
-        imageLinks: book.volumeInfo.imageLinks || {
+        title: book.volumeInfo?.title || "Unknown Title",
+        subtitle: book.volumeInfo?.subtitle || "",
+        authors: book.volumeInfo?.authors || ["Unknown Author"],
+        publisher: book.volumeInfo?.publisher || "Unknown Publisher",
+        publishedDate: book.volumeInfo?.publishedDate || "Unknown Date",
+        description: book.volumeInfo?.description || "No description available",
+        pageCount: book.volumeInfo?.pageCount || 0,
+        categories: book.volumeInfo?.categories || [],
+        averageRating: book.volumeInfo?.averageRating || 0,
+        ratingsCount: book.volumeInfo?.ratingsCount || 0,
+        imageLinks: book.volumeInfo?.imageLinks || {
           thumbnail: null,
           smallThumbnail: null,
         },
-        language: book.volumeInfo.language || "en",
-        previewLink: book.volumeInfo.previewLink || "",
-        infoLink: book.volumeInfo.infoLink || "",
-        canonicalVolumeLink: book.volumeInfo.canonicalVolumeLink || "",
-      }));
+        language: book.volumeInfo?.language || "en",
+        previewLink: book.volumeInfo?.previewLink || "",
+        infoLink: book.volumeInfo?.infoLink || "",
+        canonicalVolumeLink: book.volumeInfo?.canonicalVolumeLink || "",
+      })) || [];
 
-      if (reset) {
-        setBooks(newBooks);
-        setPage(1); // Next page will be 1
-      } else {
-        setBooks((prevBooks) => [...prevBooks, ...newBooks]);
-        setPage((prevPage) => prevPage + 1);
-      }
-
-      // Determine if there are more results
-      setHasMore(startIndex + items.length < totalItems);
-    } catch (error) {
-      console.error("Error fetching books:", error);
-      setError(
-        error.response?.data?.error?.message ||
-          "Failed to load books. Please try again."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Initial fetch on component mount
+  // Handle infinite scroll using IntersectionObserver
   useEffect(() => {
-    // Only fetch if we have a search term or if we're showing recommendations
-    if (searchTerm || searchParams.get("recommendations") === "true") {
-      fetchBooks(true);
+    const currentRef = lastBookElementRef.current;
+
+    if (!currentRef || isFetchingNextPage || !hasNextPage) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (currentRef) {
+      observer.observe(currentRef);
     }
-  }, [searchTerm, category, sortBy, filterBy]);
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Update URL when search parameters change
   const updateURL = () => {
@@ -174,49 +207,30 @@ const Browse = () => {
     );
   };
 
-  // Handle search submission
+  // Handle search submission - still supports pressing enter
   const handleSearch = (e) => {
     e.preventDefault();
-    updateURL();
-    fetchBooks(true);
+    setSearchTerm(localSearchTerm);
+    setTimeout(() => {
+      updateURL();
+      refetch();
+    }, 0);
   };
-
-  // Handle infinite scroll
-  useEffect(() => {
-    const currentObserver = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading) {
-          fetchBooks();
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    if (lastBookElementRef.current) {
-      currentObserver.observe(lastBookElementRef.current);
-    }
-
-    return () => {
-      if (lastBookElementRef.current) {
-        currentObserver.unobserve(lastBookElementRef.current);
-      }
-    };
-  }, [lastBookElementRef.current, hasMore, isLoading]);
 
   // Truncate long text
-  const truncateText = (text, maxLength) => {
-    if (!text) return "";
-    return text.length > maxLength
-      ? text.substring(0, maxLength) + "..."
-      : text;
-  };
+  // const truncateText = (text, maxLength) => {
+  //   if (!text) return "";
+  //   return text.length > maxLength
+  //     ? text.substring(0, maxLength) + "..."
+  //     : text;
+  // };
 
   // Format author list
-  const formatAuthors = (authors) => {
-    if (!authors || authors.length === 0) return "Unknown Author";
-    if (authors.length === 1) return authors[0];
-    return `${authors[0]} et al.`;
-  };
+  // const formatAuthors = (authors) => {
+  //   if (!authors || authors.length === 0) return "Unknown Author";
+  //   if (authors.length === 1) return authors[0];
+  //   return `${authors[0]} et al.`;
+  // };
 
   // Toggle advanced search options
   const toggleAdvancedSearch = () => {
@@ -241,8 +255,8 @@ const Browse = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-gray-900 to-blue-950 pb-12">
       {/* Background elements */}
-      <div className="absolute top-1/4 -left-20 w-64 h-80 bg-blue-500/5 rounded-md blur-2xl rotate-12 -z-10"></div>
-      <div className="absolute bottom-1/4 -right-16 w-72 h-96 bg-indigo-500/5 rounded-md blur-2xl -rotate-12 -z-10"></div>
+      <div className="fixed top-1/4 left-0 w-64 h-80 bg-blue-500/5 rounded-md blur-2xl rotate-12 -z-10"></div>
+      <div className="fixed bottom-1/4 right-[5%] w-72 h-96 bg-indigo-500/5 rounded-md blur-2xl -rotate-12 -z-10"></div>
 
       {/* Search Section */}
       <div className="pt-8 pb-12 px-4 mx-auto max-w-7xl relative">
@@ -271,8 +285,8 @@ const Browse = () => {
                 </svg>
                 <input
                   type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={localSearchTerm}
+                  onChange={(e) => setLocalSearchTerm(e.target.value)}
                   placeholder="Search by title, author, or ISBN..."
                   className="pl-10 pr-4 py-3 w-full bg-gray-800/50 border border-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
@@ -402,7 +416,7 @@ const Browse = () => {
                       onClick={() => {
                         setCategory(cat.value);
                         updateURL();
-                        fetchBooks(true);
+                        refetch();
                       }}
                       className={`w-full text-left px-2 py-1 rounded text-sm transition-colors ${
                         category === cat.value
@@ -499,9 +513,9 @@ const Browse = () => {
           {/* Results area */}
           <div className="col-span-12 md:col-span-9 lg:col-span-10">
             {/* Error display */}
-            {error && (
+            {isError && (
               <div className="mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
-                {error}
+                {error?.message || "Failed to load books. Please try again."}
               </div>
             )}
 
@@ -539,113 +553,21 @@ const Browse = () => {
                   // Check if this is the last element for infinite scrolling
                   const isLastElement = index === books.length - 1;
 
-                  return (
-                    <div
-                      key={`${book.id}-${index}`}
-                      ref={isLastElement ? lastBookElementRef : null}
-                      className="bg-gray-900/60 backdrop-blur-sm rounded-xl border border-indigo-900/30 overflow-hidden hover:border-indigo-700/30 transition-all duration-300 flex flex-col h-full"
-                    >
-                      {/* Book cover */}
-                      <div className="relative pt-[140%]">
-                        {book.imageLinks && book.imageLinks.thumbnail ? (
-                          <img
-                            src={book.imageLinks.thumbnail.replace(
-                              "http:",
-                              "https:"
-                            )} // Ensure HTTPS
-                            alt={`Cover of ${book.title}`}
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="absolute inset-0 w-full h-full bg-indigo-900/20 flex items-center justify-center">
-                            <svg
-                              className="w-16 h-16 text-indigo-400/40"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              <path
-                                d="M6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2Z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </div>
-                        )}
-
-                        {/* Rating badge if available */}
-                        {book.averageRating > 0 && (
-                          <div className="absolute top-2 right-2 bg-indigo-900/80 backdrop-blur-sm text-yellow-400 px-2 py-1 rounded text-xs font-medium flex items-center">
-                            <svg
-                              className="w-3 h-3 mr-1"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {book.averageRating.toFixed(1)}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Book details */}
-                      <div className="p-4 flex-grow flex flex-col">
-                        <h3 className="text-white font-semibold line-clamp-2 mb-1">
-                          {book.title}
-                        </h3>
-                        {book.subtitle && (
-                          <p className="text-indigo-300 text-sm mb-2 line-clamp-2">
-                            {book.subtitle}
-                          </p>
-                        )}
-                        <p className="text-indigo-400 text-sm mb-3">
-                          {formatAuthors(book.authors)}
-                        </p>
-
-                        {/* Book description */}
-                        <p className="text-indigo-200 text-sm mb-4 line-clamp-3">
-                          {book.description
-                            ? truncateText(book.description, 150)
-                            : "No description available"}
-                        </p>
-
-                        {/* Action buttons */}
-                        <div className="mt-auto space-y-2">
-                          <a
-                            href={book.previewLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block w-full py-2 text-center bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded transition-colors"
-                          >
-                            Preview
-                          </a>
-                          <button
-                            className="block w-full py-2 text-center bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded transition-colors"
-                            onClick={() =>
-                              console.log("Reserve clicked for", book.id)
-                            }
-                          >
-                            Reserve
-                          </button>
-                        </div>
-                      </div>
+                  // We can't directly forward 'ref' to a custom component
+                  // Create a wrapper div for the ref instead
+                  return isLastElement ? (
+                    <div key={`${book.id}-${index}`} ref={lastBookElementRef}>
+                      <BookCard book={book} />
                     </div>
+                  ) : (
+                    <BookCard key={`${book.id}-${index}`} book={book} />
                   );
                 })}
               </div>
             )}
 
             {/* No results state */}
-            {!isLoading && books.length === 0 && !error && (
+            {!isLoading && books.length === 0 && !isError && (
               <div className="text-center py-20">
                 <svg
                   className="w-16 h-16 text-indigo-400/30 mx-auto mb-4"
@@ -684,7 +606,7 @@ const Browse = () => {
             )}
 
             {/* Loading more indicator */}
-            {isLoading && books.length > 0 && (
+            {isFetchingNextPage && (
               <div className="flex justify-center items-center py-8">
                 <div className="w-8 h-8 border-t-4 border-b-4 border-indigo-500 rounded-full animate-spin mr-2"></div>
                 <p className="text-indigo-300">Loading more books...</p>
@@ -692,7 +614,7 @@ const Browse = () => {
             )}
 
             {/* End of results message */}
-            {!isLoading && !hasMore && books.length > 0 && (
+            {!isLoading && !hasNextPage && books.length > 0 && (
               <div className="text-center py-8 text-indigo-400">
                 You&#39;ve reached the end of the results
               </div>
@@ -703,5 +625,4 @@ const Browse = () => {
     </div>
   );
 };
-
 export default Browse;

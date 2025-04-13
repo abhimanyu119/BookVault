@@ -11,6 +11,7 @@ import Home from "./pages/Home";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Browse from "./pages/Browse";
+import BookDetail from "./pages/BookDetail";
 import Dashboard from "./pages/Dashboard";
 import AdminCentre from "./pages/AdminCentre";
 import NotFound from "./pages/NotFound";
@@ -119,6 +120,7 @@ function App() {
           />
           <Route path="/" element={<Home />} />
           <Route path="/browse" element={<Browse />} />
+          <Route path="/books/:id" element={<BookDetail />} />
           <Route
             path="/dashboard"
             element={
