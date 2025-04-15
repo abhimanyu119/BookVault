@@ -3,6 +3,7 @@ import { useLocation, useNavigate} from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
 import BookCard from "../components/BookCard";
+import BookCardSkeleton from "../components/BookCardSkeleton";
 
 // API endpoints
 const GOOGLE_BOOKS_API_BASE = "https://www.googleapis.com/books/v1/volumes";
@@ -540,9 +541,10 @@ useEffect(() => {
 
             {/* Loading indicator for initial load */}
             {isLoading && books.length === 0 && (
-              <div className="flex justify-center items-center py-20">
-                <div className="w-12 h-12 border-t-4 border-b-4 border-indigo-500 rounded-full animate-spin"></div>
-                <p className="ml-3 text-indigo-300">Loading books...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <BookCardSkeleton key={index} />
+                ))}
               </div>
             )}
 
@@ -607,9 +609,19 @@ useEffect(() => {
 
             {/* Loading more indicator */}
             {isFetchingNextPage && (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-8 h-8 border-t-4 border-b-4 border-indigo-500 rounded-full animate-spin mr-2"></div>
-                <p className="text-indigo-300">Loading more books...</p>
+              <div className="w-full py-8">
+                <div className="flex justify-center items-center mb-6">
+                  <div className="w-6 h-6 border-t-3 border-b-3 border-indigo-500 rounded-full animate-spin mr-2"></div>
+                  <p className="text-indigo-300">Loading more books...</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-70">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <BookCardSkeleton
+                      key={`infinite-scroll-skeleton-${index}`}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 

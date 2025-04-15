@@ -14,6 +14,7 @@ import Browse from "./pages/Browse";
 import BookDetail from "./pages/BookDetail";
 import Dashboard from "./pages/Dashboard";
 import AdminCentre from "./pages/AdminCentre";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { isAuthenticated } from "./utils/auth";
 
@@ -65,6 +66,16 @@ const globalStyles = `
 .animate-in {
   opacity: 1 !important;
   transform: translateY(0) !important;
+}
+
+.page-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(13, 16, 45, 0.3); /* Dark indigo overlay */
+  z-index: 40;
 }
 `;
 
@@ -137,7 +148,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
         </Route>
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
