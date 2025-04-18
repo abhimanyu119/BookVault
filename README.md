@@ -38,10 +38,10 @@ Fill in the appropriate values for each variable based on your local or producti
 ```bash
 
 BookVault/
-├── frontend/
+├── backend/
 │   ├── .env        ← Add your environment variables here
 │   └── ...
-├── backend/
+├── frontend/
 └── ...
 ```
 🛠️ Technologies Used
