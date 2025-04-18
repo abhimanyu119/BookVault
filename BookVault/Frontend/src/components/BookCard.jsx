@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import PropTypes from "prop-types";
+import SaveButton from "./SaveButton";
 
 // Define default book object
 const DEFAULT_BOOK = {
@@ -154,6 +155,10 @@ const BookCard = ({ book = DEFAULT_BOOK }) => {
           >
             View Details
           </Link>
+
+          {/* Save for later button */}
+          <SaveButton book={book} />
+
           {book.previewLink && (
             <a
               href={book.previewLink}
@@ -188,6 +193,7 @@ BookCard.propTypes = {
     }),
     averageRating: PropTypes.number,
     previewLink: PropTypes.string,
+    categories: PropTypes.arrayOf(PropTypes.string),
   }).isRequired,
 };
 

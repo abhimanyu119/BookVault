@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
+import SaveButton from "../components/SaveButton";
 
 const BookDetail = () => {
   const { id } = useParams();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [imageError, setImageError] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
     const fetchBookDetails = async () => {
@@ -16,6 +19,10 @@ const BookDetail = () => {
           `https://www.googleapis.com/books/v1/volumes/${id}`
         );
         setBook(response.data);
+
+        // Check if this book is saved
+        checkIfBookIsSaved(response.data.id);
+
         setLoading(false);
       } catch (err) {
         console.error("Error fetching book details:", err);
@@ -27,10 +34,76 @@ const BookDetail = () => {
     fetchBookDetails();
   }, [id]);
 
+  // Check if book is saved in localStorage
+  const checkIfBookIsSaved = (bookId) => {
+    const savedBooks = localStorage.getItem("savedBooks");
+    if (!savedBooks) {
+      setIsSaved(false);
+      return;
+    }
+
+    const parsedBooks = JSON.parse(savedBooks);
+    const found = parsedBooks.some(
+      (savedBook) =>
+        savedBook.id === bookId || savedBook.googleBookId === bookId
+    );
+
+    setIsSaved(found);
+  };
+
+  // Save or remove book from saved collection
+  const toggleSaveBook = () => {
+    if (!book) return;
+
+    const savedBooksData = localStorage.getItem("savedBooks");
+    const currentSavedBooks = savedBooksData ? JSON.parse(savedBooksData) : [];
+
+    // Format book data for saving
+    const formattedBook = {
+      id: book.id,
+      googleBookId: book.id,
+      savedDate: new Date().toISOString(),
+      status: "saved", // Default status
+      volumeInfo: book.volumeInfo || {},
+    };
+
+    if (isSaved) {
+      // Remove book from saved books
+      const updatedSavedBooks = currentSavedBooks.filter(
+        (savedBook) =>
+          savedBook.id !== book.id && savedBook.googleBookId !== book.id
+      );
+      localStorage.setItem("savedBooks", JSON.stringify(updatedSavedBooks));
+      setIsSaved(false);
+    } else {
+      // Add book to saved books
+      const updatedSavedBooks = [...currentSavedBooks, formattedBook];
+      localStorage.setItem("savedBooks", JSON.stringify(updatedSavedBooks));
+      setIsSaved(true);
+    }
+  };
+
   // Format authors list
   const formatAuthors = (authors) => {
     if (!authors || authors.length === 0) return "Unknown Author";
     return authors.join(", ");
+  };
+
+  // Generate a color based on the book title for placeholder background
+  const generateColorFromTitle = (title) => {
+    const str = title || "Unknown";
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const hue = hash % 360;
+    return `hsla(${hue}, 70%, 15%, 1)`;
+  };
+
+  // Get first letter of the title for placeholder
+  const getTitleInitial = (title) => {
+    return (title || "U")[0].toUpperCase();
   };
 
   if (loading) {
@@ -69,6 +142,17 @@ const BookDetail = () => {
   }
 
   const volumeInfo = book.volumeInfo || {};
+  const shouldShowPlaceholder = !volumeInfo.imageLinks || imageError;
+
+  // Create a book object compatible with the SaveButton component
+  const bookForSaveButton = {
+    id: book.id,
+    title: volumeInfo.title,
+    authors: volumeInfo.authors,
+    description: volumeInfo.description,
+    categories: volumeInfo.categories,
+    imageLinks: volumeInfo.imageLinks,
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-gray-900 to-blue-950 py-16 px-4 relative">
@@ -149,7 +233,7 @@ const BookDetail = () => {
             {/* Left column: Book cover and action buttons */}
             <div>
               <div className="bg-gray-800 rounded-lg overflow-hidden shadow-md mb-6 flex items-center justify-center p-4">
-                {volumeInfo.imageLinks ? (
+                {!shouldShowPlaceholder ? (
                   <img
                     src={
                       volumeInfo.imageLinks.thumbnail?.replace(
@@ -164,18 +248,38 @@ const BookDetail = () => {
                     alt={`Cover of ${volumeInfo.title}`}
                     className="max-w-[180px] max-h-[250px] object-contain"
                     style={{ filter: "contrast(1.05) saturate(1.2)" }}
+                    onError={() => setImageError(true)}
                   />
                 ) : (
-                  <div className="aspect-[2/3] w-[180px] h-[250px] bg-indigo-900/50 flex items-center justify-center p-4">
-                    <p className="text-indigo-300 text-center">
-                      No cover available
-                    </p>
+                  <div
+                    className="aspect-[2/3] w-[180px] h-[250px] relative flex items-center justify-center"
+                    style={{
+                      backgroundColor: generateColorFromTitle(volumeInfo.title),
+                    }}
+                  >
+                    <div className="flex flex-col items-center justify-center p-6 text-center">
+                      <span className="text-5xl font-bold text-white/60 mb-2">
+                        {getTitleInitial(volumeInfo.title)}
+                      </span>
+                      <h3 className="text-lg font-semibold text-white/90 line-clamp-3">
+                        {volumeInfo.title}
+                      </h3>
+                      <p className="text-white/70 mt-2 text-sm">
+                        {formatAuthors(volumeInfo.authors)}
+                      </p>
+                    </div>
+                    {/* Decorative elements for the placeholder */}
+                    <div className="absolute top-0 left-0 w-full h-1/3 bg-white/5"></div>
+                    <div className="absolute bottom-0 right-0 w-1/3 h-full bg-white/5"></div>
                   </div>
                 )}
               </div>
 
               {/* Action buttons */}
               <div className="space-y-3 mb-6">
+                {/* Save button */}
+                <SaveButton book={bookForSaveButton} />
+
                 {volumeInfo.previewLink && (
                   <a
                     href={volumeInfo.previewLink}

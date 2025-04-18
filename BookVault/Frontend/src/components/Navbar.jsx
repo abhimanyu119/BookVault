@@ -11,10 +11,8 @@ const Navbar = () => {
   const navigate = useNavigate();
   const userMenuRef = useRef(null);
 
-  // GitHub repository URL
-  const githubUrl = "https://github.com/yourusername/bookvault"; // Update with your actual GitHub URL
+  const githubUrl = "https://github.com/abhimanyu119/bookvault";
 
-  // Get user auth status
   const token = localStorage.getItem("token");
   const isLoggedIn = Boolean(token);
 
@@ -194,7 +192,7 @@ const Navbar = () => {
               rel="noopener noreferrer"
               className="px-2 text-gray-200 hover:text-white font-medium hover:underline hover:underline-offset-4 hover:decoration-blue-400 truncate max-w-[100px] lg:max-w-none flex items-center"
             >
-              Docs
+              Documentation
               <svg
                 className="ml-1 w-4 h-4"
                 fill="none"

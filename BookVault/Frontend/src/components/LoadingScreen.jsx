@@ -23,7 +23,7 @@ const BookVaultLogo = () => (
             initial: { y: -155 }, // Start above
             animate: { y: 0 }, // Slide down
           }}
-          transition={{ duration: 2, ease: "easeInOut", delay: 0.4 }}
+          transition={{ duration: 1, ease: "easeInOut", delay: 0.8 }}
           width="165"
           height="155"
           fill="white"

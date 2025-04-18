@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import logo from "../assets/logo-copy.svg";
 const Home = () => {
   const headingRef = useRef(null);
@@ -11,7 +12,7 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center px-4 pt-24">
+    <div className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center px-4 pt-28">
       {/* Enhanced background with subtle book pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-gray-900 to-blue-950 -z-10"></div>
 
@@ -153,26 +154,26 @@ const Home = () => {
         </p>
 
         {/* Action buttons */}
-        <div
-          className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-6 opacity-0 animate-fadeSlideUp"
-          style={{ animationDelay: "0.9s", animationFillMode: "forwards" }}
-        >
-          <a
-            href="/signup"
-            className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-lg shadow-indigo-600/20 transition-all duration-200 transform hover:scale-105 hover:shadow-indigo-500/30 relative overflow-hidden group"
+          <div
+            className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-6 opacity-0 animate-fadeSlideUp"
+            style={{ animationDelay: "0.9s", animationFillMode: "forwards" }}
           >
-            <span className="relative z-10">Get Started</span>
-            <span className="absolute -inset-full top-0 block bg-indigo-500 opacity-0 group-hover:opacity-20 transition-opacity group-hover:translate-x-full duration-500"></span>
-          </a>
-          <a
-            href="/browse"
-            className="w-full sm:w-auto px-8 py-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg border border-indigo-700/30 shadow-lg transition-all duration-200 transform hover:scale-105 hover:border-indigo-600"
-          >
-            Browse Catalog
-          </a>
-        </div>
+            <Link
+              to="/signup"
+              className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-lg shadow-indigo-600/20 transition-all duration-200 transform hover:scale-105 hover:shadow-indigo-500/30 relative overflow-hidden group"
+            >
+              <span className="relative z-10">Get Started</span>
+              <span className="absolute -inset-full top-0 block bg-indigo-500 opacity-0 group-hover:opacity-20 transition-opacity group-hover:translate-x-full duration-500"></span>
+            </Link>
+            <Link
+              to="/browse"
+              className="w-full sm:w-auto px-8 py-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg border border-indigo-700/30 shadow-lg transition-all duration-200 transform hover:scale-105 hover:border-indigo-600"
+            >
+              Browse Catalog
+            </Link>
+          </div>
 
-        {/* Library feature highlights */}
+          {/* Library feature highlights */}
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-16 opacity-0 animate-fadeIn"
           style={{ animationDelay: "1.2s", animationFillMode: "forwards" }}

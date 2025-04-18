@@ -2,70 +2,176 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 
+// Import components
+import StatCard from "../components/StatCard";
+import SavedBooksList from "../components/SavedBooksList";
+import ActivityFeed from "../components/ActivityFeed";
+import RecommendationsWidget from "../components/RecommendationsWidget";
+
+// Icons for stat cards
+const SavedBooksIcon = () => (
+  <svg
+    className="w-6 h-6 text-current"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M19 21L12 16L5 21V5C5 4.46957 5.21071 3.96086 5.58579 3.58579C5.96086 3.21071 6.46957 3 7 3H17C17.5304 3 18.0391 3.21071 18.4142 3.58579C18.7893 3.96086 19 4.46957 19 5V21Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const ReadingIcon = () => (
+  <svg
+    className="w-6 h-6 text-current"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M2 3H8C9.06087 3 10.0783 3.42143 10.8284 4.17157C11.5786 4.92172 12 5.93913 12 7V21C12 20.2044 11.6839 19.4413 11.1213 18.8787C10.5587 18.3161 9.79565 18 9 18H2V3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M22 3H16C14.9391 3 13.9217 3.42143 13.1716 4.17157C12.4214 4.92172 12 5.93913 12 7V21C12 20.2044 12.3161 19.4413 12.8787 18.8787C13.4413 18.3161 14.2044 18 15 18H22V3Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const FinishedIcon = () => (
+  <svg
+    className="w-6 h-6 text-current"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const RecommendedIcon = () => (
+  <svg
+    className="w-6 h-6 text-current"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M9 4H5C3.89543 4 3 4.89543 3 6V18C3 19.1046 3.89543 20 5 20H9C10.1046 20 11 19.1046 11 18V6C11 4.89543 10.1046 4 9 4Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M19 4H15C13.8954 4 13 4.89543 13 6V8C13 9.10457 13.8954 10 15 10H19C20.1046 10 21 9.10457 21 8V6C21 4.89543 20.1046 4 19 4Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M19 14H15C13.8954 14 13 14.8954 13 16V18C13 19.1046 13.8954 20 15 20H19C20.1046 20 21 19.1046 21 18V16C21 14.8954 20.1046 14 19 14Z"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
-  // const [error, setError] = useState("");
   const [userData, setUserData] = useState(null);
   const [bookStats, setBookStats] = useState({
-    borrowed: 0,
-    overdue: 0,
-    reserved: 0,
+    saved: 0,
+    reading: 0,
+    finished: 0,
     recommended: 0,
   });
-  const [recentBooks, setRecentBooks] = useState([]);
+  const [savedBooks, setSavedBooks] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
-        
+
         const storedUser = localStorage.getItem("user");
         const token = localStorage.getItem("token");
-        
+
         if (!token) {
           navigate("/login");
           return;
         }
-        
+
         // Parse user data
         const parsedUser = storedUser ? JSON.parse(storedUser) : null;
         setUserData(parsedUser);
-        
+
         // Configure headers with token
         const config = {
           headers: {
-            "Authorization": `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         };
-        
-        // Fetch dashboard data
-        const [booksResponse, notificationsResponse] = await Promise.all([
-          axios.get("/books/user-stats", config),
-          axios.get("/user/notifications", config)
-        ]);
-        
+
+        // Get saved books from localStorage
+        const savedBooksData = localStorage.getItem("savedBooks");
+        console.log("Saved Books Data: ", savedBooksData);
+        const parsedSavedBooks = savedBooksData
+          ? JSON.parse(savedBooksData)
+          : [];
+
+        // Fetch notifications from our backend
+        const notificationsResponse = await axios.get(
+          "/user/notifications",
+          config
+        );
+
+        // Calculate stats based on saved books
+        const stats = {
+          saved: parsedSavedBooks.length || 0,
+          reading:
+            parsedSavedBooks.filter((book) => book.status === "reading")
+              .length || 0,
+          finished:
+            parsedSavedBooks.filter((book) => book.status === "finished")
+              .length || 0,
+          recommended: 5, // Example placeholder - could be calculated based on user preferences
+        };
+
         // Set book statistics
-        setBookStats(booksResponse.data.stats || {
-          borrowed: 0,
-          overdue: 0,
-          reserved: 0,
-          recommended: 0,
-        });
-        
-        // Set recent books
-        setRecentBooks(booksResponse.data.recentBooks || []);
-        
+        setBookStats(stats);
+
+        // Set saved books
+        setSavedBooks(parsedSavedBooks || []);
+
         // Set notifications
         setNotifications(notificationsResponse.data || []);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        // setError(
-        //   error.response?.data?.message ||
-        //   "Failed to load dashboard data. Please try again."
-        // );
-        
+
         // If unauthorized, redirect to login
         if (error.response?.status === 401) {
           localStorage.removeItem("token");
@@ -76,35 +182,135 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchDashboardData();
-  }, [navigate]);
+  }, []);
+
+  // Function to save a book
+  // const saveBook = (book) => {
+  //   // Get existing saved books
+  //   const savedBooksData = localStorage.getItem("savedBooks");
+  //   const currentSavedBooks = savedBooksData ? JSON.parse(savedBooksData) : [];
+
+  //   // Prepare the book data with Google Books API structure in mind
+  //   const bookToSave = {
+  //     id: book.id,
+  //     googleBookId: book.id, // Store Google Books ID
+  //     savedDate: new Date().toISOString(),
+  //     // If the book is from Google Books API
+  //     volumeInfo: book.volumeInfo || {
+  //       title: book.title,
+  //       authors: book.authors || [book.author],
+  //       categories: book.categories || [book.category],
+  //       imageLinks: {
+  //         thumbnail: book.coverImage,
+  //       },
+  //       description: book.description,
+  //     },
+  //   };
+
+  //   // Add to saved books if not already saved
+  //   const isAlreadySaved = currentSavedBooks.some(
+  //     (savedBook) =>
+  //       savedBook.id === book.id || savedBook.googleBookId === book.id
+  //   );
+
+  //   if (!isAlreadySaved) {
+  //     const updatedSavedBooks = [...currentSavedBooks, bookToSave];
+  //     localStorage.setItem("savedBooks", JSON.stringify(updatedSavedBooks));
+  //     setSavedBooks(updatedSavedBooks);
+
+  //     // Update stats
+  //     setBookStats((prev) => ({
+  //       ...prev,
+  //       saved: prev.saved + 1,
+  //     }));
+  //   }
+  // };
+
+  // Function to remove a book from saved
+  const removeBook = (bookId) => {
+    const savedBooksData = localStorage.getItem("savedBooks");
+    const currentSavedBooks = savedBooksData ? JSON.parse(savedBooksData) : [];
+
+    const updatedSavedBooks = currentSavedBooks.filter(
+      (book) => book.id !== bookId && book.googleBookId !== bookId
+    );
+
+    localStorage.setItem("savedBooks", JSON.stringify(updatedSavedBooks));
+    setSavedBooks(updatedSavedBooks);
+
+    // Update stats
+    setBookStats((prev) => ({
+      ...prev,
+      saved: prev.saved - 1,
+    }));
+  };
+
+  
+  const refreshSavedBooks = () => {
+    const savedBooksData = localStorage.getItem("savedBooks");
+    if (savedBooksData) {
+      const parsedBooks = JSON.parse(savedBooksData);
+      setSavedBooks(parsedBooks);
+
+      // Update stats too
+      setBookStats({
+        saved: parsedBooks.length || 0,
+        reading:
+          parsedBooks.filter((book) => book.status === "reading").length || 0,
+        finished:
+          parsedBooks.filter((book) => book.status === "finished").length || 0,
+        recommended: 5,
+      });
+    }
+  };
+
+  // Add the storage event listener for cross-tab updates
+  useEffect(() => {
+    window.addEventListener("storage", (event) => {
+      if (event.key === "savedBooks") {
+        refreshSavedBooks();
+      }
+    });
+
+    return () => {
+      window.removeEventListener("storage", (event) => {
+        if (event.key === "savedBooks") {
+          refreshSavedBooks();
+        }
+      });
+    };
+  }, []);
 
   // Format date to readable string
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    if (!dateString) return "N/A";
+    const options = { year: "numeric", month: "short", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Calculate days remaining or overdue
-  const getDaysRemaining = (dueDate) => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays;
-  };
-  
-  // Get appropriate status class based on due date
-  const getDueDateStatusClass = (dueDate) => {
-    const daysRemaining = getDaysRemaining(dueDate);
-    
-    if (daysRemaining < 0) return "text-red-400"; // Overdue
-    if (daysRemaining <= 3) return "text-yellow-400"; // Almost due
-    return "text-green-400"; // Plenty of time
+  // View book details handler
+  const handleViewDetails = (bookId) => {
+    console.log("View details clicked for", bookId);
+    // Navigate to book details using the appropriate ID format
+    navigate(`/books/${bookId}`);
   };
 
+  // Mark notification as read handler
+  const handleMarkAsRead = (notificationId) => {
+    console.log("Mark as read clicked for", notificationId);
+    // Implementation would update the notification in the backend
+    // This is a placeholder for the actual implementation
+    setNotifications((prevNotifications) =>
+      prevNotifications.map((notification) =>
+        notification.id === notificationId
+          ? { ...notification, read: true }
+          : notification
+      )
+    );
+  };
+  // Render loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-gray-900 to-blue-950 flex items-center justify-center">
@@ -116,6 +322,7 @@ const Dashboard = () => {
     );
   }
 
+  // Main dashboard render
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-gray-900 to-blue-950 py-8 px-4">
       {/* Abstract book shapes in the background */}
@@ -124,13 +331,6 @@ const Dashboard = () => {
 
       {/* Main content wrapper */}
       <div className="max-w-7xl min-h-full mx-auto">
-        {/* Error message if any */}
-        {/* {error && (
-          <div className="mt-16 mb-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400">
-            {error}
-          </div>
-        )} */}
-
         {/* Dashboard header */}
         <div className="mt-20 mb-8">
           <h1 className="text-3xl font-bold text-white">
@@ -141,271 +341,106 @@ const Dashboard = () => {
           </p>
         </div>
 
+        {/* Dashboard navigation tabs - simplified to just Overview */}
+        <div className="mb-6">
+          <div className="bg-gray-900/60 backdrop-blur-sm rounded-xl border border-indigo-900/30 p-2 flex justify-between overflow-x-auto">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className="px-4 py-2 text-sm font-medium rounded-lg mr-2 bg-indigo-600 text-white"
+            >
+              Overview
+            </button>
+            <button
+              onClick={refreshSavedBooks}
+              className="text-xs px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md ml-2 mt-0"
+              title="Refresh saved books"
+            >
+              <svg
+                className="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M4 4V9H4.58152M19.9381 11C19.446 7.05369 16.0796 4 12 4C8.64262 4 5.76829 6.06817 4.58152 9M4.58152 9H9M20 20V15H19.4185M19.4185 15C18.2317 17.9318 15.3574 20 12 20C7.92038 20 4.55399 16.9463 4.06189 13M19.4185 15H15"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+
         {/* Stats cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Borrowed books card */}
-          <div className="bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl border border-indigo-900/30 hover:border-indigo-700/30 transition-all duration-300">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-indigo-400 text-sm">Borrowed Books</p>
-                <h3 className="text-3xl font-bold text-white mt-1">{bookStats.borrowed}</h3>
-              </div>
-              <div className="bg-indigo-900/40 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-indigo-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 16V3H10C8.9 3 8 3.9 8 5V16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M19 16H8C6.9 16 6 16.9 6 18V19H21V18C21 16.9 20.1 16 19 16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-4">
-              <a href="#borrowed" className="text-indigo-400 text-sm flex items-center">
-                View all
-                <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 5L19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-          </div>
+          <StatCard
+            title="Saved Books"
+            count={bookStats.saved}
+            icon={<SavedBooksIcon />}
+            color="indigo"
+            linkText="View all"
+            linkUrl="/browse?view=saved"
+          />
 
-          {/* Overdue books card */}
-          <div className="bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl border border-indigo-900/30 hover:border-indigo-700/30 transition-all duration-300">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-red-400 text-sm">Overdue</p>
-                <h3 className="text-3xl font-bold text-white mt-1">{bookStats.overdue}</h3>
-              </div>
-              <div className="bg-red-900/40 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 8V12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-4">
-              <a href="#overdue" className="text-red-400 text-sm flex items-center">
-                Resolve now
-                <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 5L19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-          </div>
+          <StatCard
+            title="Reading"
+            count={bookStats.reading}
+            icon={<ReadingIcon />}
+            color="blue"
+            linkText="View all"
+            linkUrl="/browse?status=reading"
+          />
 
-          {/* Reserved books card */}
-          <div className="bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl border border-indigo-900/30 hover:border-indigo-700/30 transition-all duration-300">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-yellow-400 text-sm">On Hold</p>
-                <h3 className="text-3xl font-bold text-white mt-1">{bookStats.reserved}</h3>
-              </div>
-              <div className="bg-yellow-900/40 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-yellow-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19.5 12C19.5 11.6022 19.342 11.2206 19.0607 10.9393C18.7794 10.658 18.3978 10.5 18 10.5H14.82L16.32 8.43C16.43 8.29 16.5 8.15 16.5 8C16.5 7.73478 16.3946 7.48043 16.2071 7.29289C16.0196 7.10536 15.7652 7 15.5 7C15.29 7 15.11 7.11 15 7.25L12.01 11H12V7C12 6.73478 11.8946 6.48043 11.7071 6.29289C11.5196 6.10536 11.2652 6 11 6C10.7348 6 10.4804 6.10536 10.2929 6.29289C10.1054 6.48043 10 6.73478 10 7V17C10 17.2652 10.1054 17.5196 10.2929 17.7071C10.4804 17.8946 10.7348 18 11 18C11.2652 18 11.5196 17.8946 11.7071 17.7071C11.8946 17.5196 12 17.2652 12 17V13H12.01L15 16.75C15.11 16.89 15.29 17 15.5 17C15.7652 17 16.0196 16.8946 16.2071 16.7071C16.3946 16.5196 16.5 16.2652 16.5 16C16.5 15.85 16.43 15.71 16.32 15.57L14.82 13.5H18C18.3978 13.5 18.7794 13.342 19.0607 13.0607C19.342 12.7794 19.5 12.3978 19.5 12Z" fill="currentColor" />
-                  <path d="M4.5 5V19C4.5 19.5304 4.71071 20.0391 5.08579 20.4142C5.46086 20.7893 5.96957 21 6.5 21H17.5C18.0304 21 18.5391 20.7893 18.9142 20.4142C19.2893 20.0391 19.5 19.5304 19.5 19V5C19.5 4.46957 19.2893 3.96086 18.9142 3.58579C18.5391 3.21071 18.0304 3 17.5 3H6.5C5.96957 3 5.46086 3.21071 5.08579 3.58579C4.71071 3.96086 4.5 4.46957 4.5 5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-4">
-              <a href="#reserved" className="text-yellow-400 text-sm flex items-center">
-                View all
-                <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 5L19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-          </div>
+          <StatCard
+            title="Finished"
+            count={bookStats.finished}
+            icon={<FinishedIcon />}
+            color="green"
+            linkText="View history"
+            linkUrl="/browse?status=finished"
+          />
 
-          {/* Recommendations card */}
-          <div className="bg-gray-900/60 backdrop-blur-sm p-6 rounded-xl border border-indigo-900/30 hover:border-indigo-700/30 transition-all duration-300">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-green-400 text-sm">For You</p>
-                <h3 className="text-3xl font-bold text-white mt-1">{bookStats.recommended}</h3>
-              </div>
-              <div className="bg-green-900/40 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-green-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9 4H5C3.89543 4 3 4.89543 3 6V18C3 19.1046 3.89543 20 5 20H9C10.1046 20 11 19.1046 11 18V6C11 4.89543 10.1046 4 9 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M19 4H15C13.8954 4 13 4.89543 13 6V8C13 9.10457 13.8954 10 15 10H19C20.1046 10 21 9.10457 21 8V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M19 14H15C13.8954 14 13 14.8954 13 16V18C13 19.1046 13.8954 20 15 20H19C20.1046 20 21 19.1046 21 18V16C21 14.8954 20.1046 14 19 14Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-4">
-              <a href="/browse?recommendations=true" className="text-green-400 text-sm flex items-center">
-                Explore recommendations
-                <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 5L19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </a>
-            </div>
-          </div>
+          <StatCard
+            title="Recommended"
+            count={bookStats.recommended}
+            icon={<RecommendedIcon />}
+            color="purple"
+            linkText="Explore recommendations"
+            linkUrl="/browse?recommendations=true"
+          />
         </div>
 
         {/* Main dashboard content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Current books section - 2 columns on lg screens */}
+          {/* Saved books section - 2 columns on lg screens */}
           <div className="lg:col-span-2">
-            <div className="bg-gray-900/60 backdrop-blur-sm rounded-xl border border-indigo-900/30 overflow-hidden">
-              <div className="p-6 border-b border-indigo-900/30">
-                <h2 className="text-xl font-semibold text-white">Currently Borrowed Books</h2>
-              </div>
+            {/* Saved Books List Component */}
+            <SavedBooksList
+              books={savedBooks}
+              formatDate={formatDate}
+              onViewDetails={handleViewDetails}
+              onRemove={removeBook}
+            />
 
-              {recentBooks && recentBooks.length > 0 ? (
-                <div className="divide-y divide-indigo-900/30">
-                  {recentBooks.map((book) => (
-                    <div key={book.id} className="p-6 flex flex-col md:flex-row items-start md:items-center gap-4">
-                      {/* Book cover */}
-                      <div className="w-16 h-24 flex-shrink-0 bg-indigo-900/40 rounded-md overflow-hidden">
-                        {book.coverImage ? (
-                          <img
-                            src={book.coverImage}
-                            alt={`Cover of ${book.title}`}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-indigo-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M4 19.5C4 18.837 4.26339 18.2011 4.73223 17.7322C5.20107 17.2634 5.83696 17 6.5 17H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d="M6.5 2H20V22H6.5C5.83696 22 5.20107 21.7366 4.73223 21.2678C4.26339 20.7989 4 20.163 4 19.5V4.5C4 3.83696 4.26339 3.20107 4.73223 2.73223C5.20107 2.26339 5.83696 2 6.5 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Book details */}
-                      <div className="flex-grow">
-                        <h3 className="text-lg font-medium text-white">{book.title}</h3>
-                        <p className="text-indigo-300 text-sm">{book.author}</p>
-                        
-                        <div className="flex flex-wrap items-center gap-4 mt-3">
-                          <div>
-                            <span className="text-xs text-indigo-400">Borrowed:</span>
-                            <span className="ml-1 text-sm text-indigo-200">{formatDate(book.borrowedDate)}</span>
-                          </div>
-                          <div>
-                            <span className="text-xs text-indigo-400">Due:</span>
-                            <span className={`ml-1 text-sm ${getDueDateStatusClass(book.dueDate)}`}>
-                              {formatDate(book.dueDate)}
-                              {getDaysRemaining(book.dueDate) < 0
-                                ? ` (${Math.abs(getDaysRemaining(book.dueDate))} days overdue)`
-                                : ` (${getDaysRemaining(book.dueDate)} days left)`}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex gap-2 mt-4 md:mt-0">
-                        <button
-                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-md transition-colors"
-                          onClick={() => console.log("Renew clicked for", book.id)}
-                        >
-                          Renew
-                        </button>
-                        <button
-                          className="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-md transition-colors"
-                          onClick={() => console.log("Return clicked for", book.id)}
-                        >
-                          Return
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-10 text-center">
-                  <svg className="w-12 h-12 text-indigo-400/40 mx-auto mb-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 6.25278V19.2528M12 6.25278C10.8321 5.47686 9.24649 5 7.5 5C5.75351 5 4.16789 5.47686 3 6.25278V19.2528C4.16789 18.4769 5.75351 18 7.5 18C9.24649 18 10.8321 18.4769 12 19.2528M12 6.25278C13.1679 5.47686 14.7535 5 16.5 5C18.2465 5 19.8321 5.47686 21 6.25278V19.2528C19.8321 18.4769 18.2465 18 16.5 18C14.7535 18 13.1679 18.4769 12 19.2528" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <p className="text-indigo-300">You don&#39;t have any borrowed books</p>
-                  <a href="/browse" className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors">
-                    Browse the catalog
-                  </a>
-                </div>
-              )}
-
-              {recentBooks && recentBooks.length > 0 && (
-                <div className="p-4 text-center border-t border-indigo-900/30">
-                  <a href="/account/borrowed" className="text-indigo-400 hover:text-indigo-300 transition-colors">
-                    View all borrowed books
-                  </a>
-                </div>
-              )}
-            </div>
+            {/* Recommendations Widget Component */}
+            {savedBooks && savedBooks.length > 0 && <RecommendationsWidget />}
           </div>
 
           {/* Activity & notifications section */}
           <div className="lg:col-span-1">
-            <div className="bg-gray-900/60 backdrop-blur-sm rounded-xl border border-indigo-900/30 overflow-hidden">
-              <div className="p-6 border-b border-indigo-900/30">
-                <h2 className="text-xl font-semibold text-white">Recent Activity</h2>
-              </div>
-
-              {notifications && notifications.length > 0 ? (
-                <div className="divide-y divide-indigo-900/30">
-                  {notifications.map((notification) => (
-                    <div key={notification.id} className="p-4 hover:bg-indigo-900/20 transition-colors">
-                      <div className="flex items-start gap-3">
-                        {/* Notification icon */}
-                        <div className={`p-2 rounded-lg flex-shrink-0 ${notification.type === 'overdue' ? 'bg-red-900/40' :
-                          notification.type === 'due_soon' ? 'bg-yellow-900/40' :
-                            notification.type === 'available' ? 'bg-green-900/40' :
-                              'bg-indigo-900/40'
-                          }`}>
-                          {notification.type === 'overdue' ? (
-                            <svg className="w-5 h-5 text-red-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 8V12L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" />
-                            </svg>
-                          ) : notification.type === 'due_soon' ? (
-                            <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 16V16.01M12 8V12M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          ) : notification.type === 'available' ? (
-                            <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M9 12L11 14L15 10M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          ) : (
-                            <svg className="w-5 h-5 text-indigo-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <path d="M12 6.25278V19.2528M12 6.25278C10.8321 5.47686 9.24649 5 7.5 5C5.75351 5 4.16789 5.47686 3 6.25278V19.2528C4.16789 18.4769 5.75351 18 7.5 18C9.24649 18 10.8321 18.4769 12 19.2528M12 6.25278C13.1679 5.47686 14.7535 5 16.5 5C18.2465 5 19.8321 5.47686 21 6.25278V19.2528C19.8321 18.4769 18.2465 18 16.5 18C14.7535 18 13.1679 18.4769 12 19.2528" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
-                        </div>
-
-                        {/* Notification content */}
-                        <div className="flex-grow">
-                          <p className={`text-sm ${notification.type === 'overdue' ? 'text-red-300' :
-                            notification.type === 'due_soon' ? 'text-yellow-300' :
-                              notification.type === 'available' ? 'text-green-300' :
-                                'text-indigo-200'
-                            }`}>
-                            {notification.message}
-                          </p>
-                          <span className="text-xs text-indigo-400">{formatDate(notification.createdAt)}</span>
-                        </div>
-
-                        {/* Mark as read button */}
-                        {!notification.read && (
-                          <button
-                            className="flex-shrink-0 w-2 h-2 rounded-full bg-indigo-500"
-                            title="Mark as read"
-                            onClick={() => console.log("Mark as read clicked for", notification.id)}
-                          ></button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-10 text-center">
-                  <svg className="w-12 h-12 text-indigo-400/40 mx-auto mb-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 17H20L18.5951 15.5951C18.2141 15.2141 18 14.6973 18 14.1585V11C18 8.38757 16.3304 6.16509 14 5.34142V5C14 3.89543 13.1046 3 12 3C10.8954 3 10 3.89543 10 5V5.34142C7.66962 6.16509 6 8.38757 611C6 14.1585 6 14.6973 5.40493 15.5951L4 17H9M15 17V18C15 20.2091 13.2091 22 11 22C8.79086 22 7 20.2091 7 18V17M15 17H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>)}</div></div></div></div></div>)
-}
+            {/* Activity Feed Component */}
+            <ActivityFeed
+              notifications={notifications}
+              formatDate={formatDate}
+              onMarkAsRead={handleMarkAsRead}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default Dashboard;
